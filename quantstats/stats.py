@@ -823,8 +823,18 @@ def autocorr_penalty(
     # returns.to_csv('/Users/ran/Desktop/test.csv')
     num = len(returns)
 
+    # Fix: corrcoef on fewer than 2 points is undefined and returns NaN
+    # with a RuntimeWarning, so bail out early with the neutral penalty
+    if num < 2:
+        return 1.0
+
     # Calculate autocorrelation coefficient between consecutive returns
     coef = _np.abs(_np.corrcoef(returns[:-1], returns[1:])[0, 1])
+
+    # Fix: zero-variance (constant) returns also make corrcoef return NaN,
+    # which would otherwise silently propagate through the sum below
+    if _np.isnan(coef):
+        return 1.0
 
     # Vectorized calculation instead of list comprehension
     x = _np.arange(1, num)
